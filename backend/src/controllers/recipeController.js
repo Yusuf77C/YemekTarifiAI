@@ -171,4 +171,157 @@ exports.deleteRecipe = async (req, res) => {
         console.error('Tarif silinirken hata:', error);
         res.status(500).json({ message: 'Tarif silinirken bir hata oluştu' });
     }
+};
+
+// 10 yeni yemek ekle
+exports.addSampleRecipes = async (req, res) => {
+    try {
+        console.log('Örnek tarifler ekleniyor...');
+        
+        // Önce mevcut tarifleri temizleyelim
+        await Recipe.deleteMany({});
+        console.log('Mevcut tarifler temizlendi');
+
+        const sampleRecipes = [
+            {
+                title: "Mercimek Çorbası",
+                description: "Geleneksel Türk mutfağının vazgeçilmez çorbası",
+                ingredients: ["1 su bardağı kırmızı mercimek", "1 adet soğan", "1 adet havuç", "2 yemek kaşığı un", "1 yemek kaşığı tereyağı", "1 litre su", "Tuz, karabiber"],
+                instructions: ["Mercimeği yıkayın", "Soğan ve havucu doğrayın", "Tereyağında kavurun", "Mercimeği ekleyin", "Su ekleyin ve pişirin", "Blenderdan geçirin"],
+                cookingTime: 30,
+                difficulty: "Kolay",
+                servings: 4,
+                calories: 200,
+                image: "https://source.unsplash.com/random/800x600/?lentil,soup",
+                category: "Çorba",
+                createdBy: "admin"
+            },
+            {
+                title: "İskender",
+                description: "Bursa'nın meşhur yemeği",
+                ingredients: ["500g döner eti", "4 adet pide", "2 su bardağı domates sosu", "2 su bardağı yoğurt", "2 yemek kaşığı tereyağı", "Tuz, karabiber"],
+                instructions: ["Döneri ince dilimler halinde kesin", "Pideleri ısıtın", "Domates sosunu hazırlayın", "Yoğurdu yanında servis yapın", "Tereyağını kızdırıp üzerine dökün"],
+                cookingTime: 45,
+                difficulty: "Orta",
+                servings: 4,
+                calories: 600,
+                image: "https://source.unsplash.com/random/800x600/?doner,kebab",
+                category: "Ana Yemek",
+                createdBy: "admin"
+            },
+            {
+                title: "Mantı",
+                description: "Geleneksel Türk mutfağının en özel yemeklerinden biri",
+                ingredients: ["3 su bardağı un", "1 adet yumurta", "1 su bardağı su", "250g kıyma", "1 adet soğan", "2 su bardağı yoğurt", "2 yemek kaşığı tereyağı", "Tuz, karabiber"],
+                instructions: ["Hamur için un, yumurta ve suyu yoğurun", "Hamuru ince açın", "Küçük kareler kesin", "İç harç hazırlayın", "Her kareye iç harçtan koyup kapatın", "Kaynar suda haşlayın"],
+                cookingTime: 90,
+                difficulty: "Zor",
+                servings: 4,
+                calories: 500,
+                image: "https://source.unsplash.com/random/800x600/?dumpling,turkish",
+                category: "Ana Yemek",
+                createdBy: "admin"
+            },
+            {
+                title: "Baklava",
+                description: "Türk mutfağının en meşhur tatlısı",
+                ingredients: ["500g yufka", "250g ceviz", "250g tereyağı", "2 su bardağı şeker", "2 su bardağı su", "1 yemek kaşığı limon suyu"],
+                instructions: ["Yufkaları açın", "Ceviz serpin", "Tereyağını eritin", "Fırında pişirin", "Şerbet hazırlayın", "Şerbeti dökün"],
+                cookingTime: 60,
+                difficulty: "Orta",
+                servings: 8,
+                calories: 400,
+                image: "https://source.unsplash.com/random/800x600/?baklava,dessert",
+                category: "Tatlı",
+                createdBy: "admin"
+            },
+            {
+                title: "Menemen",
+                description: "Türk kahvaltılarının vazgeçilmez lezzeti",
+                ingredients: ["4 adet yumurta", "2 adet domates", "2 adet yeşil biber", "1 adet soğan", "2 yemek kaşığı zeytinyağı", "Tuz, karabiber"],
+                instructions: ["Soğanı doğrayın", "Biberleri doğrayın", "Domatesleri doğrayın", "Zeytinyağında kavurun", "Yumurtaları kırın", "Karıştırarak pişirin"],
+                cookingTime: 20,
+                difficulty: "Kolay",
+                servings: 2,
+                calories: 300,
+                image: "https://source.unsplash.com/random/800x600/?scrambled,eggs",
+                category: "Kahvaltı",
+                createdBy: "admin"
+            },
+            {
+                title: "Lahmacun",
+                description: "İnce hamur üzerine kıyma, soğan ve baharatlarla hazırlanan lezzet",
+                ingredients: ["500g un", "1 su bardağı su", "250g kıyma", "1 adet soğan", "2 adet domates", "2 yemek kaşığı salça", "Tuz, karabiber, kırmızı biber"],
+                instructions: ["Hamur için un ve suyu yoğurun", "Hamuru ince açın", "İç harç hazırlayın", "Harçı hamurun üzerine yayın", "Fırında pişirin", "Sıcak servis yapın"],
+                cookingTime: 30,
+                difficulty: "Orta",
+                servings: 4,
+                calories: 350,
+                image: "https://source.unsplash.com/random/800x600/?lahmacun,turkish",
+                category: "Ana Yemek",
+                createdBy: "admin"
+            },
+            {
+                title: "Pide",
+                description: "Türk mutfağının geleneksel hamur işi",
+                ingredients: ["500g un", "1 su bardağı su", "1 paket maya", "250g kıyma", "1 adet soğan", "2 yemek kaşığı tereyağı", "Tuz"],
+                instructions: ["Hamur için un, su ve mayayı yoğurun", "Mayalanmaya bırakın", "İç harç hazırlayın", "Hamuru açın", "Fırında pişirin", "Tereyağı ile servis yapın"],
+                cookingTime: 45,
+                difficulty: "Orta",
+                servings: 4,
+                calories: 400,
+                image: "https://source.unsplash.com/random/800x600/?pide,turkish",
+                category: "Ana Yemek",
+                createdBy: "admin"
+            },
+            {
+                title: "Künefe",
+                description: "Türk mutfağının meşhur tatlısı",
+                ingredients: ["500g kadayıf", "250g künefe peyniri", "250g tereyağı", "2 su bardağı şeker", "2 su bardağı su", "1 yemek kaşığı limon suyu"],
+                instructions: ["Kadayıfı tereyağı ile yağlayın", "Yarısını tepsiye yayın", "Peyniri yerleştirin", "Kalan kadayıfı üzerine yayın", "Fırında pişirin", "Şerbetini döküp servis yapın"],
+                cookingTime: 40,
+                difficulty: "Orta",
+                servings: 6,
+                calories: 450,
+                image: "https://source.unsplash.com/random/800x600/?kunefe,dessert",
+                category: "Tatlı",
+                createdBy: "admin"
+            },
+            {
+                title: "Çiğ Köfte",
+                description: "Geleneksel Türk mutfağının lezzetli atıştırmalığı",
+                ingredients: ["2 su bardağı ince bulgur", "1 adet soğan", "2 yemek kaşığı salça", "2 yemek kaşığı isot", "Tuz, karabiber"],
+                instructions: ["Bulguru ılık suda bekletin", "Soğanı rendeleyin", "Tüm malzemeleri yoğurun", "Hamur kıvamına gelene kadar yoğurun", "Şekil verip servis yapın"],
+                cookingTime: 30,
+                difficulty: "Orta",
+                servings: 4,
+                calories: 300,
+                image: "https://source.unsplash.com/random/800x600/?cig,kofte",
+                category: "Meze",
+                createdBy: "admin"
+            },
+            {
+                title: "Sütlaç",
+                description: "Türk mutfağının geleneksel sütlü tatlısı",
+                ingredients: ["1 su bardağı pirinç", "1 litre süt", "1 su bardağı şeker", "1 yemek kaşığı nişasta", "Tarçın"],
+                instructions: ["Pirinci yıkayıp haşlayın", "Sütü ekleyin", "Koyulaşana kadar pişirin", "Şeker ve nişastayı ekleyin", "Fırında pişirin", "Tarçın serpip servis yapın"],
+                cookingTime: 60,
+                difficulty: "Kolay",
+                servings: 6,
+                calories: 250,
+                image: "https://source.unsplash.com/random/800x600/?rice,pudding",
+                category: "Tatlı",
+                createdBy: "admin"
+            }
+        ];
+
+        console.log('Tarifler hazır, MongoDB\'ye kaydediliyor...');
+        const savedRecipes = await Recipe.insertMany(sampleRecipes);
+        console.log('Kaydedilen tarifler:', savedRecipes);
+        
+        res.status(201).json(savedRecipes);
+    } catch (error) {
+        console.error('Hata:', error);
+        res.status(500).json({ message: error.message });
+    }
 }; 

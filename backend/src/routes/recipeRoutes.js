@@ -18,4 +18,6 @@ router.put('/:id', auth, recipeController.updateRecipe);
 // Tarifi sil (sadece tarifi oluşturan kullanıcı)
 router.delete('/:id', auth, recipeController.deleteRecipe);
 
+router.post('/add-sample-recipes', recipeController.addSampleRecipes);
+
 module.exports = router; 
