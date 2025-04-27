@@ -64,7 +64,7 @@ const App = () => {
             <Router>
                 <Navbar user={user} onLogout={handleLogout} />
                 <Routes>
-                    <Route path="/" element={<HomePage />} />
+                    <Route path="/" element={<HomePage user={user} />} />
                     <Route path="/recipe/:id" element={<RecipeDetail />} />
                     <Route 
                         path="/login" 

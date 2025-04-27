@@ -16,14 +16,95 @@ exports.getAllRecipes = async (req, res) => {
 // Yeni tarif ekle
 exports.createRecipe = async (req, res) => {
     try {
+        console.log('Gelen istek:', req.body);
+        console.log('Kullanıcı bilgisi:', req.user);
+
+        if (!req.user) {
+            console.log('Kullanıcı bilgisi bulunamadı');
+            return res.status(401).json({ message: 'Yetkilendirme hatası' });
+        }
+
+        // Veri doğrulama
+        const requiredFields = ['title', 'description', 'ingredients', 'instructions', 'cookingTime', 'difficulty', 'servings', 'calories', 'category'];
+        const missingFields = [];
+        
+        for (const field of requiredFields) {
+            if (!req.body[field]) {
+                missingFields.push(field);
+            }
+        }
+
+        if (missingFields.length > 0) {
+            console.log('Eksik alanlar:', missingFields);
+            return res.status(400).json({ 
+                message: 'Eksik alanlar var',
+                missingFields: missingFields
+            });
+        }
+
+        // Malzemeler ve talimatlar dizisi kontrolü
+        if (!Array.isArray(req.body.ingredients)) {
+            console.log('Malzemeler dizi formatında değil:', req.body.ingredients);
+            return res.status(400).json({ 
+                message: 'Malzemeler dizi formatında olmalıdır',
+                received: typeof req.body.ingredients
+            });
+        }
+
+        if (!Array.isArray(req.body.instructions)) {
+            console.log('Talimatlar dizi formatında değil:', req.body.instructions);
+            return res.status(400).json({ 
+                message: 'Talimatlar dizi formatında olmalıdır',
+                received: typeof req.body.instructions
+            });
+        }
+
+        // Zorluk seviyesi kontrolü
+        const validDifficulties = ['Kolay', 'Orta', 'Zor'];
+        if (!validDifficulties.includes(req.body.difficulty)) {
+            return res.status(400).json({ 
+                message: 'Geçersiz zorluk seviyesi',
+                validDifficulties: validDifficulties
+            });
+        }
+
+        // Kategori kontrolü
+        const validCategories = ['Ana Yemek', 'Çorba', 'Salata', 'Tatlı', 'İçecek', 'Kahvaltı', 'Aperatif'];
+        if (!validCategories.includes(req.body.category)) {
+            return res.status(400).json({ 
+                message: 'Geçersiz kategori',
+                validCategories: validCategories
+            });
+        }
+
         const recipe = new Recipe({
-            ...req.body,
+            title: req.body.title.trim(),
+            description: req.body.description.trim(),
+            ingredients: req.body.ingredients.map(item => item.trim()),
+            instructions: req.body.instructions.map(item => item.trim()),
+            cookingTime: parseInt(req.body.cookingTime),
+            difficulty: req.body.difficulty,
+            servings: parseInt(req.body.servings),
+            calories: parseInt(req.body.calories),
+            image: req.body.image ? req.body.image.trim() : 'https://source.unsplash.com/random/800x600/?food',
+            category: req.body.category,
             createdBy: req.user._id
         });
-        await recipe.save();
-        res.status(201).json(recipe);
+
+        console.log('Oluşturulan tarif:', recipe);
+
+        const savedRecipe = await recipe.save();
+        console.log('Kaydedilen tarif:', savedRecipe);
+        
+        res.status(201).json(savedRecipe);
     } catch (error) {
         console.error('Tarif eklenirken hata:', error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ 
+                message: 'Geçersiz veri',
+                errors: Object.values(error.errors).map(err => err.message)
+            });
+        }
         res.status(500).json({ message: 'Tarif eklenirken bir hata oluştu' });
     }
 };

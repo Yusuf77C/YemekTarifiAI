@@ -3,49 +3,77 @@ const mongoose = require('mongoose');
 const recipeSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true,
+        required: [true, 'Başlık zorunludur'],
         trim: true
     },
     description: {
         type: String,
-        required: true
+        required: [true, 'Açıklama zorunludur'],
+        trim: true
     },
-    ingredients: [{
-        type: String,
-        required: true
-    }],
-    instructions: [{
-        type: String,
-        required: true
-    }],
+    ingredients: {
+        type: [String],
+        required: [true, 'Malzemeler zorunludur'],
+        validate: {
+            validator: function(v) {
+                return v.length > 0;
+            },
+            message: 'En az bir malzeme eklenmelidir'
+        }
+    },
+    instructions: {
+        type: [String],
+        required: [true, 'Talimatlar zorunludur'],
+        validate: {
+            validator: function(v) {
+                return v.length > 0;
+            },
+            message: 'En az bir talimat eklenmelidir'
+        }
+    },
     cookingTime: {
         type: Number,
-        required: true,
-        min: 1
+        required: [true, 'Pişirme süresi zorunludur'],
+        min: [1, 'Pişirme süresi 1 dakikadan az olamaz']
     },
     difficulty: {
         type: String,
-        enum: ['Kolay', 'Orta', 'Zor'],
-        required: true
+        required: [true, 'Zorluk seviyesi zorunludur'],
+        enum: {
+            values: ['Kolay', 'Orta', 'Zor'],
+            message: 'Zorluk seviyesi Kolay, Orta veya Zor olmalıdır'
+        }
     },
     servings: {
         type: Number,
-        required: true,
-        min: 1
+        required: [true, 'Porsiyon sayısı zorunludur'],
+        min: [1, 'Porsiyon sayısı 1\'den az olamaz']
+    },
+    calories: {
+        type: Number,
+        required: [true, 'Kalori bilgisi zorunludur'],
+        min: [0, 'Kalori 0\'dan az olamaz']
     },
     image: {
         type: String,
-        required: true
+        default: 'https://source.unsplash.com/random/800x600/?food'
     },
     category: {
         type: String,
-        required: true,
-        enum: ['Ana Yemek', 'Çorba', 'Salata', 'Tatlı', 'Meze', 'Kahvaltı', 'Atıştırmalık']
+        required: [true, 'Kategori zorunludur'],
+        enum: {
+            values: ['Ana Yemek', 'Çorba', 'Salata', 'Tatlı', 'İçecek', 'Kahvaltı', 'Aperatif'],
+            message: 'Geçersiz kategori'
+        }
     },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    averageRating: {
+        type: Number,
+        default: 0
     },
     ratings: [{
         user: {
@@ -56,12 +84,9 @@ const recipeSchema = new mongoose.Schema({
             type: Number,
             min: 1,
             max: 5
-        }
-    }],
-    averageRating: {
-        type: Number,
-        default: 0
-    }
+        },
+        comment: String
+    }]
 }, {
     timestamps: true
 });

@@ -110,6 +110,65 @@ const seedRecipes = async () => {
                 category: 'Meze',
                 createdBy: adminUser._id,
                 calories: 420
+            },
+            {
+                title: 'Mercimek Çorbası',
+                description: 'Geleneksel Türk mutfağının vazgeçilmez çorbası, besleyici ve lezzetli.',
+                ingredients: [
+                    '1 su bardağı kırmızı mercimek',
+                    '1 adet soğan',
+                    '1 adet havuç',
+                    '1 adet patates',
+                    '2 yemek kaşığı un',
+                    '1 yemek kaşığı tereyağı',
+                    'Tuz, karabiber, pul biber',
+                    'Limon suyu'
+                ],
+                instructions: [
+                    'Mercimeği yıkayıp süzün.',
+                    'Soğan, havuç ve patatesi küp küp doğrayın.',
+                    'Tereyağında soğanları kavurun.',
+                    'Unu ekleyip kavurmaya devam edin.',
+                    'Mercimek ve sebzeleri ekleyip su ilave edin.',
+                    'Kaynayınca kısık ateşte pişirin.',
+                    'Blenderdan geçirip servis yapın.'
+                ],
+                cookingTime: 30,
+                difficulty: 'Kolay',
+                servings: 4,
+                image: 'https://source.unsplash.com/random/800x600/?lentil,soup',
+                category: 'Çorba',
+                createdBy: adminUser._id,
+                calories: 180
+            },
+            {
+                title: 'Künefe',
+                description: 'Kadayıf ve peynirin muhteşem uyumu, şerbetiyle damaklarda iz bırakan bir tatlı.',
+                ingredients: [
+                    '500g kadayıf',
+                    '300g künefe peyniri',
+                    '200g tereyağı',
+                    '2 su bardağı şeker',
+                    '2 su bardağı su',
+                    'Yarım limon suyu',
+                    'Antep fıstığı'
+                ],
+                instructions: [
+                    'Kadayıfı ince ince kıyın.',
+                    'Tereyağını eritip kadayıfla karıştırın.',
+                    'Yarısını tepsiye yayın.',
+                    'Peyniri üzerine serpin.',
+                    'Kalan kadayıfı kapatın.',
+                    'Kızarana kadar pişirin.',
+                    'Şerbetini döküp fıstıkla süsleyin.'
+                ],
+                cookingTime: 45,
+                difficulty: 'Orta',
+                servings: 6,
+                image: 'https://source.unsplash.com/random/800x600/?dessert,turkish',
+                category: 'Tatlı',
+                createdBy: adminUser._id,
+                calories: 550
             }
         ];
 

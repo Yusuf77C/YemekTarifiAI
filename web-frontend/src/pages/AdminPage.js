@@ -33,8 +33,9 @@ const AdminPage = () => {
         cookingTime: '',
         difficulty: '',
         servings: '',
-        image: '',
-        category: ''
+        calories: '',
+        category: '',
+        image: ''
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -56,10 +57,30 @@ const AdminPage = () => {
 
     // Form verilerini güncelle
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        // Hata mesajını temizle
+        if (error) setError('');
+    };
+
+    // Form doğrulama
+    const validateForm = () => {
+        const errors = [];
+        
+        if (!formData.title.trim()) errors.push('Tarif başlığı zorunludur');
+        if (!formData.description.trim()) errors.push('Tarif açıklaması zorunludur');
+        if (!formData.ingredients.trim()) errors.push('En az bir malzeme eklenmelidir');
+        if (!formData.instructions.trim()) errors.push('En az bir adım eklenmelidir');
+        if (!formData.cookingTime || formData.cookingTime < 1) errors.push('Geçerli bir pişirme süresi giriniz');
+        if (!formData.difficulty) errors.push('Zorluk seviyesi seçiniz');
+        if (!formData.servings || formData.servings < 1) errors.push('Geçerli bir porsiyon sayısı giriniz');
+        if (!formData.calories || formData.calories < 0) errors.push('Geçerli bir kalori değeri giriniz');
+        if (!formData.category) errors.push('Kategori seçiniz');
+
+        return errors;
     };
 
     // Yeni tarif ekleme modalını aç
@@ -73,8 +94,9 @@ const AdminPage = () => {
             cookingTime: '',
             difficulty: '',
             servings: '',
-            image: '',
-            category: ''
+            calories: '',
+            category: '',
+            image: ''
         });
         setOpen(true);
     };
@@ -86,38 +108,145 @@ const AdminPage = () => {
         setSuccess('');
     };
 
+    const refreshToken = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('Token bulunamadı');
+            }
+
+            const response = await fetch('http://localhost:5000/api/auth/refresh-token', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Token yenilenemedi');
+            }
+
+            const data = await response.json();
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            return data.token;
+        } catch (error) {
+            console.error('Token yenileme hatası:', error);
+            throw error;
+        }
+    };
+
     // Tarif ekleme/güncelleme
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Form doğrulama
+        const errors = validateForm();
+        if (errors.length > 0) {
+            setError(errors.join('\n'));
+            return;
+        }
+
         try {
+            let token = localStorage.getItem('token');
+            if (!token) {
+                setError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+                return;
+            }
+
+            // Malzemeleri ve talimatları diziye çevir
+            const ingredientsArray = formData.ingredients.split('\n').filter(item => item.trim());
+            const instructionsArray = formData.instructions.split('\n').filter(item => item.trim());
+
             const url = editingRecipe
                 ? `http://localhost:5000/api/recipes/${editingRecipe._id}`
                 : 'http://localhost:5000/api/recipes';
             
             const method = editingRecipe ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            // Zorunlu alanları kontrol et
+            const requiredFields = ['title', 'description', 'ingredients', 'instructions', 'cookingTime', 'difficulty', 'servings', 'calories', 'category'];
+            const missingFields = [];
+            
+            for (const field of requiredFields) {
+                if (!formData[field]) {
+                    missingFields.push(field);
+                }
+            }
+
+            if (missingFields.length > 0) {
+                setError(`Aşağıdaki alanlar zorunludur: ${missingFields.join(', ')}`);
+                return;
+            }
+
+            const requestData = {
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                ingredients: ingredientsArray,
+                instructions: instructionsArray,
+                cookingTime: parseInt(formData.cookingTime),
+                difficulty: formData.difficulty,
+                servings: parseInt(formData.servings),
+                calories: parseInt(formData.calories),
+                category: formData.category,
+                image: formData.image.trim() || 'https://source.unsplash.com/random/800x600/?food'
+            };
+
+            console.log('Gönderilen veri:', requestData);
+
+            let response = await fetch(url, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    ...formData,
-                    ingredients: formData.ingredients.split('\n'),
-                    instructions: formData.instructions.split('\n')
-                })
+                body: JSON.stringify(requestData)
             });
 
-            if (!response.ok) {
-                throw new Error('Tarif kaydedilemedi');
+            // Token geçersizse yenilemeyi dene
+            if (response.status === 401) {
+                try {
+                    token = await refreshToken();
+                    response = await fetch(url, {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                } catch (refreshError) {
+                    console.error('Token yenileme hatası:', refreshError);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                    return;
+                }
             }
 
-            setSuccess(editingRecipe ? 'Tarif güncellendi' : 'Tarif eklendi');
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Sunucu hatası:', errorData);
+                if (errorData.missingFields) {
+                    throw new Error(`Eksik alanlar: ${errorData.missingFields.join(', ')}`);
+                }
+                throw new Error(errorData.message || 'Tarif kaydedilemedi');
+            }
+
+            const data = await response.json();
+            console.log('Başarılı yanıt:', data);
+            setSuccess(editingRecipe ? 'Tarif başarıyla güncellendi' : 'Tarif başarıyla eklendi');
             handleClose();
-            fetchRecipes();
+            fetchRecipes(); // Tarifleri yeniden yükle
         } catch (err) {
-            setError(err.message);
+            console.error('Tarif kaydetme hatası:', err);
+            setError(err.message || 'Bir hata oluştu');
         }
     };
 
@@ -290,6 +419,17 @@ const AdminPage = () => {
                         <Grid item xs={6}>
                             <TextField
                                 fullWidth
+                                label="Kalori"
+                                name="calories"
+                                type="number"
+                                value={formData.calories}
+                                onChange={handleChange}
+                                required
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                fullWidth
                                 label="Kategori"
                                 name="category"
                                 value={formData.category}
@@ -300,10 +440,11 @@ const AdminPage = () => {
                         <Grid item xs={12}>
                             <TextField
                                 fullWidth
-                                label="Resim URL"
+                                label="Görsel URL"
                                 name="image"
                                 value={formData.image}
                                 onChange={handleChange}
+                                placeholder="https://example.com/image.jpg"
                             />
                         </Grid>
                     </Grid>

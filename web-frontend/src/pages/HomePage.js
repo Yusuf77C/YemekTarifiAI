@@ -10,10 +10,18 @@ import {
     Button,
     Paper,
     CircularProgress,
-    Alert
+    Alert,
+    TextField,
+    InputAdornment,
+    IconButton,
+    List,
+    ListItem,
+    ListItemText,
+    Autocomplete
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import SearchIcon from '@mui/icons-material/Search';
 
 // Özel stil bileşenleri
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -42,15 +50,28 @@ const StyledButton = styled(Button)(({ theme }) => ({
     },
 }));
 
-const HomePage = () => {
+const HomePage = ({ user }) => {
     const [recipes, setRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filteredRecipes, setFilteredRecipes] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchRecipes();
     }, []);
+
+    useEffect(() => {
+        if (searchTerm) {
+            const filtered = recipes.filter(recipe =>
+                recipe.title.toLowerCase().startsWith(searchTerm.toLowerCase())
+            );
+            setFilteredRecipes(filtered);
+        } else {
+            setFilteredRecipes([]);
+        }
+    }, [searchTerm, recipes]);
 
     const fetchRecipes = async () => {
         try {
@@ -65,6 +86,12 @@ const HomePage = () => {
             console.error('Tarifler yüklenirken hata:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSearch = (recipe) => {
+        if (recipe) {
+            navigate(`/recipe/${recipe._id}`);
         }
     };
 
@@ -89,7 +116,68 @@ const HomePage = () => {
     }
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Container maxWidth="lg" sx={{ mt: 4 }}>
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h4" component="h1" gutterBottom>
+                    Yemek Tarifleri
+                </Typography>
+                {user && (
+                    <Box sx={{ position: 'relative' }}>
+                        <Autocomplete
+                            freeSolo
+                            options={filteredRecipes}
+                            getOptionLabel={(option) => option.title}
+                            onChange={(event, newValue) => handleSearch(newValue)}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    fullWidth
+                                    variant="outlined"
+                                    placeholder="Yemek ara..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon sx={{ color: 'primary.main' }} />
+                                            </InputAdornment>
+                                        ),
+                                        sx: {
+                                            backgroundColor: 'background.paper',
+                                            borderRadius: 2,
+                                            boxShadow: 1,
+                                            '&:hover': {
+                                                boxShadow: 2
+                                            }
+                                        }
+                                    }}
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <ListItem {...props} component="div">
+                                    <ListItemText 
+                                        primary={option.title}
+                                        secondary={`${option.cookingTime} dk • ${option.difficulty}`}
+                                    />
+                                </ListItem>
+                            )}
+                            PaperComponent={({ children }) => (
+                                <Paper 
+                                    sx={{ 
+                                        mt: 1,
+                                        boxShadow: 3,
+                                        borderRadius: 2
+                                    }}
+                                >
+                                    {children}
+                                </Paper>
+                            )}
+                        />
+                    </Box>
+                )}
+            </Box>
+
             {/* Başlık Bölümü */}
             <StyledPaper elevation={3}>
                 <Typography 

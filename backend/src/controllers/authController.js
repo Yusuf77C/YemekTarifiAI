@@ -2,10 +2,49 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 // JWT Token oluşturma
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d'
-    });
+const generateToken = (user) => {
+    return jwt.sign(
+        { 
+            id: user._id,
+            email: user.email,
+            role: user.role 
+        }, 
+        process.env.JWT_SECRET || 'your-secret-key',
+        {
+            expiresIn: '24h' // Token süresini 24 saat olarak ayarladık
+        }
+    );
+};
+
+// Token yenileme fonksiyonu
+const refreshToken = async (req, res) => {
+    try {
+        const token = req.header('Authorization').replace('Bearer ', '');
+        if (!token) {
+            return res.status(401).json({ message: 'Token bulunamadı' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.status(401).json({ message: 'Kullanıcı bulunamadı' });
+        }
+
+        const newToken = generateToken(user);
+        res.json({
+            token: newToken,
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Token yenileme hatası:', error);
+        res.status(401).json({ message: 'Token yenilenemedi' });
+    }
 };
 
 // @desc    Kullanıcı kaydı
@@ -39,7 +78,7 @@ const registerUser = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                token: generateToken(user._id)
+                token: generateToken(user)
             });
         }
     } catch (error) {
@@ -53,42 +92,30 @@ const registerUser = async (req, res) => {
 // @access  Public
 const loginUser = async (req, res) => {
     try {
-        console.log('Giriş isteği alındı:', req.body); // Debug log
-
         const { email, password } = req.body;
 
         // Kullanıcıyı bul
         const user = await User.findOne({ email });
-        console.log('Kullanıcı bulundu:', user ? 'Evet' : 'Hayır'); // Debug log
-        if (user) {
-            console.log('Kullanıcı detayları:', {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role
-            });
-        }
-
-        if (user && user.matchPassword(password)) {
-            console.log('Şifre doğru, giriş başarılı'); // Debug log
+        
+        if (user && (await user.matchPassword(password))) {
             res.json({
                 _id: user._id,
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                token: generateToken(user._id)
+                token: generateToken(user)
             });
         } else {
-            console.log('Giriş başarısız - Kullanıcı veya şifre hatalı'); // Debug log
             res.status(401).json({ message: 'Geçersiz e-posta veya şifre' });
         }
     } catch (error) {
-        console.error('Giriş hatası:', error); // Debug log
+        console.error('Giriş hatası:', error);
         res.status(400).json({ message: error.message });
     }
 };
 
 module.exports = {
     registerUser,
-    loginUser
+    loginUser,
+    refreshToken
 }; 
