@@ -165,7 +165,7 @@ exports.deleteRecipe = async (req, res) => {
             return res.status(403).json({ message: 'Bu tarifi silme yetkiniz yok' });
         }
 
-        await recipe.remove();
+        await Recipe.findByIdAndDelete(req.params.id);
         res.json({ message: 'Tarif başarıyla silindi' });
     } catch (error) {
         console.error('Tarif silinirken hata:', error);

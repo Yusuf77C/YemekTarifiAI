@@ -9,7 +9,7 @@ import {
     Menu,
     MenuItem
 } from '@mui/material';
-import { AccountCircle } from '@mui/icons-material';
+import { AccountCircle, Favorite as FavoriteIcon } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 
 const Navbar = ({ user, onLogout }) => {
@@ -55,6 +55,14 @@ const Navbar = ({ user, onLogout }) => {
                                     Admin Panel
                                 </Button>
                             )}
+                            <Button 
+                                color="inherit" 
+                                startIcon={<FavoriteIcon />}
+                                component={RouterLink}
+                                to="/favorites"
+                            >
+                                Favorilerim
+                            </Button>
                             <IconButton
                                 size="large"
                                 aria-label="account of current user"

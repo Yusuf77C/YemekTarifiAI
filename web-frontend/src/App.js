@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
 import RecipeDetail from './components/RecipeDetail';
+import FavoritesPage from './pages/FavoritesPage';
 
 // Korumalı rota bileşeni
 const ProtectedRoute = ({ children, isAdmin }) => {
@@ -90,6 +91,7 @@ const App = () => {
                             </ProtectedRoute>
                         } 
                     />
+                    <Route path="/favorites" element={<FavoritesPage />} />
                 </Routes>
             </Router>
         </ThemeProvider>

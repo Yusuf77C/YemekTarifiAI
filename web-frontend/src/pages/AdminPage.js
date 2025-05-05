@@ -254,21 +254,33 @@ const AdminPage = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Bu tarifi silmek istediğinizden emin misiniz?')) {
             try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setError('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                    return;
+                }
+
                 const response = await fetch(`http://localhost:5000/api/recipes/${id}`, {
                     method: 'DELETE',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
 
                 if (!response.ok) {
-                    throw new Error('Tarif silinemedi');
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Tarif silinemedi');
                 }
 
-                setSuccess('Tarif silindi');
+                setSuccess('Tarif başarıyla silindi');
                 fetchRecipes();
             } catch (err) {
-                setError(err.message);
+                console.error('Silme hatası:', err);
+                setError(err.message || 'Tarif silinirken bir hata oluştu');
             }
         }
     };
