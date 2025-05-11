@@ -324,4 +324,71 @@ exports.addSampleRecipes = async (req, res) => {
         console.error('Hata:', error);
         res.status(500).json({ message: error.message });
     }
+};
+
+// Filtreleme fonksiyonu
+exports.filterRecipes = async (req, res) => {
+    try {
+        const {
+            duration,
+            difficulty,
+            calories,
+            servings,
+            type,
+            search
+        } = req.query;
+
+        let query = {};
+
+        // Süre filtresi (dakika cinsinden)
+        if (duration) {
+            const [min, max] = duration.split('-').map(Number);
+            query.duration = {};
+            if (min) query.duration.$gte = min;
+            if (max) query.duration.$lte = max;
+        }
+
+        // Zorluk seviyesi filtresi
+        if (difficulty) {
+            query.difficulty = difficulty;
+        }
+
+        // Kalori filtresi
+        if (calories) {
+            const [min, max] = calories.split('-').map(Number);
+            query.calories = {};
+            if (min) query.calories.$gte = min;
+            if (max) query.calories.$lte = max;
+        }
+
+        // Porsiyon sayısı filtresi
+        if (servings) {
+            const [min, max] = servings.split('-').map(Number);
+            query.servings = {};
+            if (min) query.servings.$gte = min;
+            if (max) query.servings.$lte = max;
+        }
+
+        // Yemek tipi filtresi
+        if (type) {
+            query.type = type;
+        }
+
+        // Arama filtresi
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const recipes = await Recipe.find(query)
+            .populate('author', 'username')
+            .sort({ createdAt: -1 });
+
+        res.json(recipes);
+    } catch (error) {
+        console.error('Filtreleme hatası:', error);
+        res.status(500).json({ message: 'Tarifler filtrelenirken bir hata oluştu' });
+    }
 }; 
