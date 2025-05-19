@@ -2,9 +2,14 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 // API key kontrolü
-console.log('API Key:', process.env.GEMINI_API_KEY ? 'Mevcut' : 'Bulunamadı');
+const API_KEY = process.env.GEMINI_API_KEY;
+console.log('API Key:', API_KEY ? 'Mevcut' : 'Bulunamadı');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+if (!API_KEY) {
+  console.error('GEMINI_API_KEY bulunamadı! Lütfen .env dosyasını kontrol edin.');
+}
+
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 const chat = async (req, res) => {
   try {
@@ -16,7 +21,7 @@ const chat = async (req, res) => {
     }
 
     // Gemini AI modelini başlat
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     console.log('AI modeli başlatıldı');
 
     // Sohbet başlat
@@ -24,11 +29,15 @@ const chat = async (req, res) => {
       history: [
         {
           role: "user",
-          parts: "Sen bir yemek asistanısın. Kullanıcılara yemek tarifleri konusunda yardımcı olacaksın. Türkçe cevap ver. Tarifleri detaylı bir şekilde, malzemeler, hazırlanışı ve pişirme süresi ile birlikte anlat.",
+          parts: [
+            { text: "Sen bir yemek asistanısın. Kullanıcılara yemek tarifleri konusunda yardımcı olacaksın. Türkçe cevap ver. Tarifleri detaylı bir şekilde, malzemeler, hazırlanışı ve pişirme süresi ile birlikte anlat." }
+          ],
         },
         {
           role: "model",
-          parts: "Merhaba! Ben bir yemek asistanıyım. Size yemek tarifleri konusunda yardımcı olmaktan mutluluk duyarım. Ne yapmak istersiniz?",
+          parts: [
+            { text: "Merhaba! Ben bir yemek asistanıyım. Size yemek tarifleri konusunda yardımcı olmaktan mutluluk duyarım. Ne yapmak istersiniz?" }
+          ],
         },
       ],
     });
@@ -43,7 +52,7 @@ const chat = async (req, res) => {
     const text = response.text();
     console.log('AI yanıtı:', text);
 
-    res.json({ response: text });
+    res.json({ reply: text });
   } catch (error) {
     console.error('AI yanıtı alınamadı. Hata detayı:', error);
     console.error('Hata stack:', error.stack);

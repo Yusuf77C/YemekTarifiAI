@@ -5,6 +5,7 @@ const connectDB = require('./utils/db');
 const authRoutes = require('./routes/authRoutes');
 const recipeRoutes = require('./routes/recipeRoutes');
 const favoriteRoutes = require('./routes/favoriteRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // Environment variables
 dotenv.config();
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'Yemek Tarifi API çalışıyor!' });

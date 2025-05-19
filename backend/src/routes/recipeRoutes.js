@@ -20,4 +20,17 @@ router.delete('/:id', auth, recipeController.deleteRecipe);
 
 router.post('/add-sample-recipes', recipeController.addSampleRecipes);
 
+
+router.post('/:id/rate', auth, recipeController.rateRecipe);
+
+router.get('/:id/ratings', recipeController.getRecipeRatings);
+
+router.get('/:id/user-rating', auth, recipeController.getUserRating);
+
+
 module.exports = router; 
+
+
+router.post('/:id/rate', auth, recipeController.rateRecipe);
+router.get('/:id/ratings', recipeController.getRecipeRatings);
+router.get('/:id/user-rating', auth, recipeController.getUserRating);

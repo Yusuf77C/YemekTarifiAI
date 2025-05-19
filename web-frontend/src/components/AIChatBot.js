@@ -45,7 +45,7 @@ const AIChatBot = () => {
       const data = await response.json();
       
       // AI yanıtını ekle
-      const aiMessage = { type: 'ai', content: data.response };
+      const aiMessage = { type: 'ai', content: data.reply };
       setChatHistory(prev => [...prev, aiMessage]);
     } catch (error) {
       console.error('AI yanıtı alınamadı:', error);
@@ -95,7 +95,7 @@ const AIChatBot = () => {
           backgroundColor: '#FF9800',
           color: 'white'
         }}>
-          <Typography variant="h6">Yemek Asistanı</Typography>
+          <Typography component="div" variant="h6">Yemek Asistanı</Typography>
           <IconButton onClick={handleClose} sx={{ color: 'white' }}>
             <CloseIcon />
           </IconButton>

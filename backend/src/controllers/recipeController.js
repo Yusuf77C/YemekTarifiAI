@@ -391,4 +391,107 @@ exports.filterRecipes = async (req, res) => {
         console.error('Filtreleme hatası:', error);
         res.status(500).json({ message: 'Tarifler filtrelenirken bir hata oluştu' });
     }
+};
+
+// Tarife puan verme
+exports.rateRecipe = async (req, res) => {
+  try {
+    const { rating } = req.body;
+    const recipeId = req.params.id;
+    const userId = req.user._id;
+
+    console.log('Puanlama isteği:', { rating, recipeId, userId });
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Geçersiz puan' });
+    }
+
+    const recipe = await Recipe.findById(recipeId);
+    if (!recipe) {
+      return res.status(404).json({ message: 'Tarif bulunamadı' });
+    }
+
+    console.log('Mevcut tarif:', recipe);
+
+    // Kullanıcının önceki puanını bul ve güncelle veya yeni puan ekle
+    const existingRatingIndex = recipe.ratings.findIndex(
+      r => r.user.toString() === userId.toString()
+    );
+
+    console.log('Mevcut puan indeksi:', existingRatingIndex);
+
+    if (existingRatingIndex > -1) {
+      recipe.ratings[existingRatingIndex].rating = rating;
+    } else {
+      recipe.ratings.push({ user: userId, rating });
+    }
+
+    // Ortalama puanı hesapla
+    recipe.calculateAverageRating();
+    await recipe.save();
+
+    console.log('Güncellenmiş tarif:', recipe);
+
+    res.json({
+      message: 'Puanlama başarılı',
+      averageRating: recipe.averageRating,
+      ratingCount: recipe.ratingCount
+    });
+  } catch (error) {
+    console.error('Puanlama hatası:', error);
+    res.status(500).json({ 
+      message: 'Sunucu hatası',
+      error: error.message 
+    });
+  }
+};
+
+// Tarifin puanlarını getir
+exports.getRecipeRatings = async (req, res) => {
+  try {
+    console.log('Tarif puanları isteniyor:', req.params.id);
+    
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      console.log('Tarif bulunamadı:', req.params.id);
+      return res.status(404).json({ message: 'Tarif bulunamadı' });
+    }
+
+    console.log('Tarif bulundu:', {
+      title: recipe.title,
+      averageRating: recipe.averageRating,
+      ratingCount: recipe.ratingCount
+    });
+
+    res.json({
+      averageRating: recipe.averageRating || 0,
+      ratingCount: recipe.ratingCount || 0
+    });
+  } catch (error) {
+    console.error('Tarif puanları alınırken hata:', error);
+    res.status(500).json({ 
+      message: 'Sunucu hatası',
+      error: error.message 
+    });
+  }
+};
+
+// Kullanıcının tarife verdiği puanı getir
+exports.getUserRating = async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ message: 'Tarif bulunamadı' });
+    }
+
+    const userRating = recipe.ratings.find(
+      r => r.user.toString() === req.user._id.toString()
+    );
+
+    res.json({
+      rating: userRating ? userRating.rating : 0
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Sunucu hatası' });
+  }
 }; 

@@ -75,20 +75,42 @@ const recipeSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    ratingCount: {
+        type: Number,
+        default: 0
+    },
     ratings: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
+            ref: 'User',
+            required: true
         },
         rating: {
             type: Number,
+            required: true,
             min: 1,
             max: 5
         },
-        comment: String
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
     }]
 }, {
     timestamps: true
 });
+
+// Puanlama ortalamasını hesaplayan metod
+recipeSchema.methods.calculateAverageRating = function() {
+    if (this.ratings.length === 0) {
+        this.averageRating = 0;
+        this.ratingCount = 0;
+        return;
+    }
+    
+    const sum = this.ratings.reduce((acc, curr) => acc + curr.rating, 0);
+    this.averageRating = sum / this.ratings.length;
+    this.ratingCount = this.ratings.length;
+};
 
 module.exports = mongoose.model('Recipe', recipeSchema); 
