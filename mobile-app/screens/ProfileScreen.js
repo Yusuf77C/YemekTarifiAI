@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,20 +11,23 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import FavoriteRecipesScreen from './FavoriteRecipesScreen';
+import { useFocusEffect } from '@react-navigation/native';
 
-const API_URL = 'http://192.168.2.4:5000';
+const API_URL = 'http://192.168.2.3:5000';
 
 const ProfileScreen = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserData();
+    }, [])
+  );
 
   const fetchUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('token');
       if (!token) {
         navigation.replace('Login');
         return;
@@ -40,7 +43,7 @@ const ProfileScreen = ({ navigation }) => {
     } catch (error) {
       console.log('Profil bilgileri alınırken hata:', error);
       if (error.response?.status === 401) {
-        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('token');
         navigation.replace('Login');
       }
     } finally {
@@ -61,7 +64,7 @@ const ProfileScreen = ({ navigation }) => {
           text: 'Çıkış Yap',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('userToken');
+              await AsyncStorage.removeItem('token');
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'Main' }],

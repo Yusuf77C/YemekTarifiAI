@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.2.4:5000';
+const API_URL = 'http://192.168.2.3:5000';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -29,17 +29,33 @@ const LoginScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
+      console.log('Giriş denemesi başladı:', { email, API_URL });
+      
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
       });
 
-      await AsyncStorage.setItem('userToken', response.data.token);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
+      console.log('API yanıtı:', response.data);
+
+      if (response.data.token) {
+        await AsyncStorage.setItem('token', response.data.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        });
+      } else {
+        throw new Error('Token alınamadı');
+      }
     } catch (error) {
+      console.error('Login error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
       Alert.alert(
         'Hata',
         error.response?.data?.message || 'Giriş yapılırken bir hata oluştu.'

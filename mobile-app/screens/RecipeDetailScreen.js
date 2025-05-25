@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,8 +12,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
 
-const API_URL = 'http://192.168.2.4:5000';
+const API_URL = 'http://192.168.2.3:5000';
 
 const RecipeDetailScreen = ({ route, navigation }) => {
   const { recipe } = route.params;
@@ -28,6 +29,12 @@ const RecipeDetailScreen = ({ route, navigation }) => {
     fetchRatings();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchFavoriteIds();
+    }, [recipe?._id])
+  );
+
   const fetchRatings = async () => {
     try {
       // Ortalama puan ve değerlendirme sayısı
@@ -41,7 +48,7 @@ const RecipeDetailScreen = ({ route, navigation }) => {
       }
 
       // Kullanıcı giriş yaptıysa, sadece kendi puanını çek
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('token');
       if (token) {
         const userResponse = await axios.get(`${API_URL}/api/recipes/${recipe._id}/user-rating`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -54,8 +61,21 @@ const RecipeDetailScreen = ({ route, navigation }) => {
     }
   };
 
+  const fetchFavoriteIds = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+      const response = await axios.get(`${API_URL}/api/favorites`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFavoriteIds(response.data.map(recipe => recipe._id));
+    } catch (err) {
+      setFavoriteIds([]);
+    }
+  };
+
   const handleRating = async (rating) => {
-    const token = await AsyncStorage.getItem('userToken');
+    const token = await AsyncStorage.getItem('token');
     if (!token) {
       Alert.alert('Giriş Gerekli', 'Puan vermek için giriş yapmalısınız.', [
         { text: 'Giriş Yap', onPress: () => navigation.navigate('Login') },
@@ -92,42 +112,58 @@ const RecipeDetailScreen = ({ route, navigation }) => {
   };
 
   const checkFavorite = async () => {
-    const token = await AsyncStorage.getItem('userToken');
-    setUserToken(token);
-    if (!token) return;
     try {
+      const token = await AsyncStorage.getItem('token');
+      setUserToken(token);
+      if (!token) return;
       const response = await axios.get(`${API_URL}/api/favorites`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const favIds = response.data.map(fav => fav._id);
       setIsFavorite(favIds.includes(recipe._id));
     } catch (err) {
-      // ignore
+      setIsFavorite(false);
     }
   };
 
   const handleFavorite = async () => {
-    if (!userToken) {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
       Alert.alert('Giriş Gerekli', 'Favorilere eklemek için giriş yapmalısınız.', [
         { text: 'Giriş Yap', onPress: () => navigation.navigate('Login') },
         { text: 'İptal', style: 'cancel' },
       ]);
       return;
     }
-    try {
-      if (isFavorite) {
+
+    if (isFavorite) {
+      // Favoriden çıkar
+      try {
         await axios.delete(`${API_URL}/api/favorites/${recipe._id}`, {
-          headers: { Authorization: `Bearer ${userToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setIsFavorite(false);
-      } else {
-        await axios.post(`${API_URL}/api/favorites`, { recipeId: recipe._id }, {
-          headers: { Authorization: `Bearer ${userToken}` },
+        Alert.alert('Başarılı', 'Tarif favorilerden kaldırıldı.');
+      } catch (error) {
+        Alert.alert('Hata', 'Favoriden çıkarma sırasında bir hata oluştu.');
+      }
+    } else {
+      // Favoriye ekle
+      try {
+        await axios.post(`${API_URL}/api/favorites/${recipe._id}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
         });
         setIsFavorite(true);
+        Alert.alert('Başarılı', 'Tarif favorilere eklendi.');
+      } catch (error) {
+        const msg = error.response?.data?.message || '';
+        if (msg.includes('zaten favorilerinizde')) {
+          setIsFavorite(true);
+          Alert.alert('Bilgi', 'Bu tarif zaten favorilerinizde.');
+        } else {
+          Alert.alert('Hata', 'Favori işlemi sırasında bir hata oluştu.');
+        }
       }
-    } catch (err) {
-      Alert.alert('Hata', 'Favori işlemi sırasında bir hata oluştu.');
     }
   };
 

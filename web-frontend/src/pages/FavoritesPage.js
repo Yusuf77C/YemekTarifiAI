@@ -3,6 +3,8 @@ import { Container, Typography, Grid, Card, CardContent, CardMedia, Box, Circula
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = 'http://192.168.2.3:5000';
+
 const FavoritesPage = () => {
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -12,6 +14,7 @@ const FavoritesPage = () => {
         fetchFavorites();
     }, []);
 
+
     const fetchFavorites = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -19,18 +22,26 @@ const FavoritesPage = () => {
                 navigate('/login');
                 return;
             }
-
-            const response = await axios.get('http://localhost:5000/api/favorites', {
+    
+            const response = await axios.get(`${API_URL}/api/favorites`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            setFavorites(response.data);
+    
+            // API'den gelen veriyi düzenle ve null kontrolü ekle
+            const formattedFavorites = response.data
+                .filter(fav => fav && fav.recipe) // Önce fav ve fav.recipe'nin varlığını kontrol et
+                .map(fav => fav.recipe)
+                .filter(recipe => recipe && recipe._id); // Geçerli recipe objelerini filtrele
+    
+            setFavorites(formattedFavorites);
         } catch (error) {
             console.error('Favoriler yüklenirken hata:', error);
+            setFavorites([]); // Hata durumunda boş array set et
         } finally {
             setLoading(false);
         }
     };
+
 
     if (loading) {
         return (
@@ -68,27 +79,31 @@ const FavoritesPage = () => {
                                 onClick={() => navigate(`/recipe/${recipe._id}`)}
                             >
                                 <CardMedia
-                                    component="img"
+                                    component="img"//Önceki
                                     height="200"
-                                    image={recipe.image}
-                                    alt={recipe.title}
+                                    image={recipe?.image || '/default-recipe-image.jpg'}
+                                    alt={recipe?.title || 'Tarif görseli'}
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = '/default-recipe-image.jpg';
+                                    }}
                                 />
                                 <CardContent sx={{ flexGrow: 1 }}>
                                     <Typography gutterBottom variant="h6" component="h2">
-                                        {recipe.title}
+                                        {recipe.title || 'İsimsiz Tarif'}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        {recipe.description}
+                                        {recipe.description || 'Açıklama bulunmuyor'}
                                     </Typography>
                                     <Box sx={{ mt: 2 }}>
                                         <Typography variant="body2">
-                                            ⏱ {recipe.cookingTime} dk
+                                            ⏱ {recipe.cookingTime || 0} dk
                                         </Typography>
                                         <Typography variant="body2">
-                                            🍽 {recipe.servings} porsiyon
+                                            🍽 {recipe.servings || 0} porsiyon
                                         </Typography>
                                         <Typography variant="body2">
-                                            🔥 {recipe.calories} kalori
+                                            🔥 {recipe.calories || 0} kalori
                                         </Typography>
                                     </Box>
                                 </CardContent>

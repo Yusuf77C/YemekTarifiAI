@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,12 +10,14 @@ import {
   FlatList,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
-const API_URL = 'http://192.168.2.4:5000';
+const API_URL = 'http://192.168.2.3:5000';
 
 const HomeScreen = ({ navigation }) => {
   const [recipes, setRecipes] = useState([]);
@@ -30,15 +32,23 @@ const HomeScreen = ({ navigation }) => {
     calories: '',
   });
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState([]);
 
   useEffect(() => {
     checkToken();
     fetchRecipes();
+    fetchFavorites();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkToken();
+    }, [])
+  );
 
   const checkToken = async () => {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('token');
       setUserToken(token);
     } catch (error) {
       console.log('Token kontrolü sırasında hata:', error);
@@ -53,6 +63,51 @@ const HomeScreen = ({ navigation }) => {
       console.log('Tarifler yüklenirken hata:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFavorites = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+      const response = await axios.get(`${API_URL}/api/favorites`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFavoriteIds(response.data.map(recipe => recipe._id));
+    } catch (err) {
+      setFavoriteIds([]);
+    }
+  };
+
+  const handleFavorite = async (recipeId) => {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      Alert.alert('Giriş Gerekli', 'Favorilere eklemek için giriş yapmalısınız.');
+      return;
+    }
+    if (favoriteIds.includes(recipeId)) {
+      try {
+        await axios.delete(`${API_URL}/api/favorites/${recipeId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFavoriteIds(favoriteIds.filter(id => id !== recipeId));
+      } catch (error) {
+        Alert.alert('Hata', 'Favoriden çıkarma sırasında bir hata oluştu.');
+      }
+    } else {
+      try {
+        await axios.post(`${API_URL}/api/favorites/${recipeId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFavoriteIds([...favoriteIds, recipeId]);
+      } catch (error) {
+        const msg = error.response?.data?.message || '';
+        if (msg.includes('zaten favorilerinizde')) {
+          setFavoriteIds([...favoriteIds, recipeId]);
+        } else {
+          Alert.alert('Hata', 'Favori işlemi sırasında bir hata oluştu.');
+        }
+      }
     }
   };
 
@@ -194,6 +249,16 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.recipeMeta}>
           <Text style={styles.recipeMetaText}>{item.cookingTime} dk</Text>
           <Text style={styles.recipeMetaText}>{item.difficulty}</Text>
+          <TouchableOpacity
+            onPress={() => handleFavorite(item._id)}
+            style={{ marginLeft: 10 }}
+          >
+            <Ionicons
+              name={favoriteIds.includes(item._id) ? 'heart' : 'heart-outline'}
+              size={24}
+              color={favoriteIds.includes(item._id) ? '#FF3B30' : '#FF9800'}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -204,22 +269,17 @@ const HomeScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Yemek Tarifi AI</Text>
-        <TouchableOpacity
-          style={styles.authButton}
-          onPress={() => {
-            if (userToken) {
-              navigation.navigate('Profil');
-            } else {
-              setShowAuthModal(true);
-            }
-          }}
-        >
-          <Ionicons
-            name={userToken ? 'person-circle' : 'log-in'}
-            size={24}
-            color="#FF9800"
-          />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {userToken ? (
+            <TouchableOpacity onPress={() => navigation.navigate('Profil')}>
+              <Ionicons name="person-circle-outline" size={32} color="#FF9800" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Ionicons name="log-in-outline" size={32} color="#FF9800" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Arama ve Filtreleme */}
@@ -339,8 +399,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  authButton: {
-    padding: 8,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   searchContainer: {
     flexDirection: 'row',

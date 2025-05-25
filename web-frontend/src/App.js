@@ -7,7 +7,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
-import RecipeDetail from './components/RecipeDetail';
+import RecipeDetail from './pages/RecipeDetail';
 import FavoritesPage from './pages/FavoritesPage';
 
 // Korumalı rota bileşeni

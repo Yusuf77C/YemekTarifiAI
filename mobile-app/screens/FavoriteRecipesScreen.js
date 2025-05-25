@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_URL = 'http://192.168.2.4:5000';
+const API_URL = 'http://192.168.2.3:5000';
 
 const FavoriteRecipesScreen = ({ navigation }) => {
   const [favorites, setFavorites] = useState([]);
@@ -23,9 +23,9 @@ const FavoriteRecipesScreen = ({ navigation }) => {
   }, []);
 
   const fetchFavorites = async () => {
-    setLoading(true);
+    setLoading(true);//önceki hali
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem('token');
       if (!token) return;
       const response = await axios.get(`${API_URL}/api/favorites`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -51,27 +51,31 @@ const FavoriteRecipesScreen = ({ navigation }) => {
     }
   };
 
-  const renderRecipeCard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.recipeCard}
-      onPress={() => handleRecipePress(item)}
-    >
-      <Image
-        source={{ uri: item.image || 'https://via.placeholder.com/150' }}
-        style={styles.recipeImage}
-      />
-      <View style={styles.recipeInfo}>
-        <Text style={styles.recipeTitle}>{item.title}</Text>
-        <Text style={styles.recipeDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
-        <View style={styles.recipeMeta}>
-          <Text style={styles.recipeMetaText}>{item.cookingTime} dk</Text>
-          <Text style={styles.recipeMetaText}>{item.difficulty}</Text>
+  const renderRecipeCard = ({ item }) => {
+    const recipe = item.recipe || item;
+    if (!recipe) return null;
+    return (
+      <TouchableOpacity
+        style={styles.recipeCard}
+        onPress={() => handleRecipePress(recipe)}
+      >
+        <Image
+          source={{ uri: recipe.image || 'https://via.placeholder.com/150' }}
+          style={styles.recipeImage}
+        />
+        <View style={styles.recipeInfo}>
+          <Text style={styles.recipeTitle}>{recipe.title}</Text>
+          <Text style={styles.recipeDescription} numberOfLines={2}>
+            {recipe.description}
+          </Text>
+          <View style={styles.recipeMeta}>
+            <Text style={styles.recipeMetaText}>{recipe.cookingTime} dk</Text>
+            <Text style={styles.recipeMetaText}>{recipe.difficulty}</Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -94,7 +98,7 @@ const FavoriteRecipesScreen = ({ navigation }) => {
     <FlatList
       data={favorites}
       renderItem={renderRecipeCard}
-      keyExtractor={item => item._id}
+      keyExtractor={item => (item.recipe ? item.recipe._id : item._id)}
       contentContainerStyle={styles.recipeList}
       showsVerticalScrollIndicator={false}
     />

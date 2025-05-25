@@ -62,7 +62,7 @@ const recipeSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Kategori zorunludur'],
         enum: {
-            values: ['Ana Yemek', 'Çorba', 'Salata', 'Tatlı', 'İçecek', 'Kahvaltı', 'Aperatif'],
+            values: ['Ana Yemek', 'Çorba', 'Salata', 'Tatlı', 'İçecek', 'Kahvaltı', 'Aperatif','Yan Yemek','Zeytinyağlı'],
             message: 'Geçersiz kategori'
         }
     },
