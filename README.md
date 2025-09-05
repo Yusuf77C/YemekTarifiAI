@@ -4,8 +4,6 @@ Bu proje, kullanıcıların günlük hayatlarını kolaylaştırmak için tasarl
 Uygulama, kullanıcıların elindeki malzemelere göre uygun yemek tarifleri önerir, tarifleri inceleme ve beğenme imkanı sunar. Ayrıca kullanıcı dostu arayüzü ile web ve mobilde entegre bir deneyim sağlar.  
 
 
-<img width="1833" height="901" alt="Ekran görüntüsü 2025-05-25 235029" src="https://github.com/user-attachments/assets/32c05438-a25e-413e-be3c-e27d49109732" />
-
 
 ---
 
